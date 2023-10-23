@@ -60,15 +60,24 @@ router.post(
         owner: req.user,
       });
 
-      const transformedPicture = convertToBase64(req.files.pic);
-      const resultPicture = await cloudinary.uploader.upload(
-        transformedPicture,
-        { folder: `vinted/offers/${newOffer._id}` }
-      );
+      // const transformedPicture = convertToBase64(req.files.pic);
+      // const resultPicture = await cloudinary.uploader.upload(
+      //   transformedPicture,
+      //   { folder: `vinted/offers/${newOffer._id}` }
+      // );
 
-      newOffer.product_image = resultPicture;
+      if (req.files && req.files.pics.length) {
+        const arrayOfPics = req.files.pics.map((pic) => {
+          return cloudinary.uploader.upload(
+            convertToBase64(pic, { folder: `vinted/offers/${newOffer._id}` })
+          );
+        });
+        const resultPics = await Promise.all(arrayOfPics);
+        newOffer.product_pictures = resultPics;
+      }
+
+      // newOffer.product_image = resultPicture;
       await newOffer.save();
-
       res.status(200).json(newOffer);
     } catch (error) {
       res.status(500).json({ message: error.message });
